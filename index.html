@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Adobe Sign Widget URL</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  </head>
+  <body>
+    <div class="container">
+      <h1>Adobe Sign Widget URL Generator    <small>by Peilu Liu</small></h1>
+      <div class="jumbotron">
+        <h3>Widget URL:</h3>
+        <form id="widgetInfo">
+            <div class="form-group">
+                <label for="widgetInfo">Integration Key</label>
+                <input type="text" class="form-control" id="intKey" placeholder="Integration Key">
+            </div>
+          <!-- <div class="form-group">
+            <label for="widgetInfo">Widget URL</label>
+            <input type="text" class="form-control" id="widgetURL" placeholder="Widget URL">
+          </div>   
+          <div class="form-group">
+              <label for="widgetInfo">Widget ID</label>
+              <input type="text" class="form-control" id="widgetID" placeholder="Widget ID">
+            </div>        -->
+          <button type="submit" class="btn btn-primary" onclick="getWidgets(); return false;">Get Widgets</button>
+        </form>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <form id="formFields">
+            
+        
+          </form>
+        </div>
+      </div>
+      <div class="footer">
+        
+      </div>
+      <p>&copy Adobe Inc.</p>
+    </div>
+   
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="http://chancejs.com/chance.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!-- <script src="/func.js" type="text/script"></script> -->
+    <script >
+      function getWidgets () {
+        var intKey = document.getElementById('intKey').value;
+        console.log(document.getElementById('intKey').value);
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open( "GET", "https://api.na2.echosign.com:443/api/rest/v6/widgets", false); 
+        xmlHttp.setRequestHeader("Authorization", "Bearer " + intKey);
+        xmlHttp.send();
+        //console.log(xmlHttp.responseText);
+        var myArr = JSON.parse(xmlHttp.responseText);
+        console.log("============================" + myArr);
+        if(myArr == "" || myArr == null) {
+          console.log("Invalid Integration Key");
+        } else {
+          for(var i = 0; i < myArr.userWidgetList.length; i++) {
+             var obj = myArr.userWidgetList[i];
+             console.log(obj.name);
+         }
+        }
+
+      }
+
+function fetchIssues () {
+   console.log("Console Message");
+    var formFields = document.getElementById('formFields');
+    
+    var intKey = document.getElementById('intKey').value;
+    var widgetURL = document.getElementById('widgetURL').value;
+    var widgetID = document.getElementById('widgetID').value;
+
+    console.log(intKey);
+    console.log(widgetURL);
+    console.log(widgetID);
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "https://api.na2.echosign.com:443/api/rest/v6/widgets/" + widgetID + "/formData", false ); 
+    xmlHttp.setRequestHeader("Authorization", "Bearer " + intKey);
+    xmlHttp.send( null );
+    var responseByteArray = xmlHttp.response;
+    console.log(xmlHttp.responseText);
+    console.log(responseByteArray);
+    var fieldArray = CSVToArray(responseByteArray, ",");
+    console.log(CSVToArray(fieldArray, ","));
+    formFields.innerHTML = '';
+    for (var i = 0; i < fieldArray.length; i++) {
+        if (fieldArray[i] == "agreementId" || fieldArray[i] == "completed" || fieldArray[i] == "widget signed/approved" || fieldArray[i] == "email verified") {
+            continue;
+        }
+      formFields.innerHTML += '<div class="form-group">' + 
+      '<label for="formFields">' + fieldArray[i] + '</label>' + 
+      '<input type="text" class="form-control" id="' + fieldArray[i] + '" placeholder="' + fieldArray[i] + '">' + 
+    '</div>';
+    }
+      formFields.innerHTML += 
+      '<a href="#" class="btn btn-success" onclick="setDone()">Done</a>   ' + 
+      '<a href="#" class="btn btn-danger" onclick="setClose()">Close</a>'; 
+  }
+
+
+
+      function setDone () {
+        var widgetURL = document.getElementById('widgetURL').value;
+        var elements = document.getElementById("formFields").elements;
+        var counter = 0;
+        for (var i = 0, element; element = elements[i++];) {
+            if (element.value === "")
+            {
+                console.log("it's an empty textfield");
+            }
+            else  {
+            console.log(element.id + ": " + element.value);
+                if (counter == 0) {
+                    widgetURL +=  "#" + element.id + "=" + element.value;
+                } else {
+                    widgetURL +=  "&" + element.id + "=" + element.value;
+                }     
+                counter++;     
+              }
+        }
+        window.open(widgetURL, '_blank');
+      }
+
+      function setClose () {
+        var formFields = document.getElementById('formFields');    
+        formFields.innerHTML = '';
+        console.log("Close clicked!");
+      }
+
+
+    function CSVToArray( strData, strDelimiter ){
+      strDelimiter = (strDelimiter || ",");
+
+      var objPattern = new RegExp(
+          (
+              "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+              "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+              "([^\"\\" + strDelimiter + "\\r\\n]*))"
+          ),
+          "gi"
+          );
+
+      var arrData = [];
+
+      var arrMatches = null;
+
+      while (arrMatches = objPattern.exec( strData )){
+          var strMatchedDelimiter = arrMatches[ 1 ];
+          if (
+              strMatchedDelimiter.length &&
+              strMatchedDelimiter !== strDelimiter
+              ){
+                break;
+          }
+
+          var strMatchedValue;
+
+          if (arrMatches[ 2 ]){
+              strMatchedValue = arrMatches[ 2 ].replace(
+                  new RegExp( "\"\"", "g" ),
+                  "\""
+                  );
+
+          } else {
+              strMatchedValue = arrMatches[ 3 ];
+
+          }
+          arrData.push( strMatchedValue );
+      }
+
+      return( arrData );
+  }
+    </script>
+  </body>
+</html>
